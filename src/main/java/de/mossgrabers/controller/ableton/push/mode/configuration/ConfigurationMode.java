@@ -64,6 +64,11 @@ public class ConfigurationMode extends BaseMode<IItem>
             final PushConfiguration configuration = this.surface.getConfiguration ();
             configuration.setPanSendButtonFxVolumeEnabled (!configuration.isPanSendButtonFxVolumeEnabled ());
         }
+        else if (index == 5 && event == ButtonEvent.UP)
+        {
+            final PushConfiguration configuration = this.surface.getConfiguration ();
+            configuration.setVolumeButtonIgnoreDoublePressEnabled (!configuration.isVolumeButtonIgnoreDoublePressEnabled ());
+        }
     }
 
 
@@ -74,6 +79,8 @@ public class ConfigurationMode extends BaseMode<IItem>
         if (this.isButtonRow (1, buttonID) == 4)
             return this.surface.getConfiguration ().isPanSendButtonFxVolumeEnabled () ? PushColorManager.PUSH1_COLOR2_WHITE : PushColorManager.PUSH1_COLOR2_GREY_LO;
 
+        if (this.isButtonRow (1, buttonID) == 5)
+            return this.surface.getConfiguration ().isVolumeButtonIgnoreDoublePressEnabled () ? PushColorManager.PUSH1_COLOR2_WHITE : PushColorManager.PUSH1_COLOR2_GREY_LO;
         return super.getButtonColor (buttonID);
     }
 
@@ -91,6 +98,10 @@ public class ConfigurationMode extends BaseMode<IItem>
         display.setBlock (0, 4, "Pan/Send");
         display.setBlock (1, 4, "FX Volume");
         display.setBlock (2, 4, this.surface.getConfiguration ().isPanSendButtonFxVolumeEnabled () ? "On" : "Off");
+
+        display.setBlock (0, 5, "Volume");
+        display.setBlock (1, 5, "Ignore 2nd");
+        display.setBlock (2, 5, this.surface.getConfiguration ().isVolumeButtonIgnoreDoublePressEnabled () ? "On" : "Off");
     }
 
 

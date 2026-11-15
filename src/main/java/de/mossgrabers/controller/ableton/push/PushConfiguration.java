@@ -359,6 +359,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     private Modes                 debugMode                   = Modes.TRACK;
     private Modes                 layerMode                   = null;
     private boolean               panSendButtonFxVolume       = false;
+    private boolean               volumeButtonIgnoreDoublePress = false;
 
     // Only Push 1
     private int                   velocityCurvePush1          = 1;
@@ -412,6 +413,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     private IEnumSetting          velocityCurveSetting;
     private IEnumSetting          padThresholdSetting;
     private IEnumSetting          panSendButtonFxVolumeSetting;
+    private IEnumSetting          volumeButtonIgnoreDoublePressSetting;
     // Push 2
     private IIntegerSetting       padSensitivitySetting;
     private IIntegerSetting       padGainSetting;
@@ -551,6 +553,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
             case PushVersion.VERSION_1:
                 this.activatePush1PadSettings (globalSettings);
                 this.activatePush1PanSendButtonSetting (globalSettings);
+                this.activatePush1VolumeButtonSetting (globalSettings);
                 this.activateConvertAftertouchSetting (globalSettings);
                 break;
 
@@ -814,6 +817,28 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     public void setPanSendButtonFxVolumeEnabled (final boolean enabled)
     {
         this.panSendButtonFxVolumeSetting.set (ON_OFF_OPTIONS[enabled ? 1 : 0]);
+    }
+
+
+    /**
+     * Should the Push 1 Volume button ignore its second press?
+     *
+     * @return True if a normal second press is ignored
+     */
+    public boolean isVolumeButtonIgnoreDoublePressEnabled ()
+    {
+        return this.volumeButtonIgnoreDoublePress;
+    }
+
+
+    /**
+     * Enable or disable the Push 1 Volume button single-action behaviour.
+     *
+     * @param enabled True to ignore a normal second press
+     */
+    public void setVolumeButtonIgnoreDoublePressEnabled (final boolean enabled)
+    {
+        this.volumeButtonIgnoreDoublePressSetting.set (ON_OFF_OPTIONS[enabled ? 1 : 0]);
     }
 
 
@@ -1842,6 +1867,18 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     {
         this.panSendButtonFxVolumeSetting = settingsUI.getEnumSetting ("Use Pan/Send button for FX Volume", CATEGORY_WORKFLOW, ON_OFF_OPTIONS, ON_OFF_OPTIONS[0]);
         this.panSendButtonFxVolumeSetting.addValueObserver (value -> this.panSendButtonFxVolume = "On".equals (value));
+    }
+
+
+    /**
+     * Activate the Push 1 Volume button behaviour setting.
+     *
+     * @param settingsUI The settings
+     */
+    private void activatePush1VolumeButtonSetting (final ISettingsUI settingsUI)
+    {
+        this.volumeButtonIgnoreDoublePressSetting = settingsUI.getEnumSetting ("Ignore Volume button double press", CATEGORY_WORKFLOW, ON_OFF_OPTIONS, ON_OFF_OPTIONS[0]);
+        this.volumeButtonIgnoreDoublePressSetting.addValueObserver (value -> this.volumeButtonIgnoreDoublePress = "On".equals (value));
     }
 
 
