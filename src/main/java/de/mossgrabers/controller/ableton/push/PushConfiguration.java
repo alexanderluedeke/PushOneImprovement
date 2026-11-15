@@ -358,6 +358,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     private boolean               stopAutomationOnKnobRelease = false;
     private Modes                 debugMode                   = Modes.TRACK;
     private Modes                 layerMode                   = null;
+    private boolean               panSendButtonFxVolume       = false;
 
     // Only Push 1
     private int                   velocityCurvePush1          = 1;
@@ -410,6 +411,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     // Push 1
     private IEnumSetting          velocityCurveSetting;
     private IEnumSetting          padThresholdSetting;
+    private IEnumSetting          panSendButtonFxVolumeSetting;
     // Push 2
     private IIntegerSetting       padSensitivitySetting;
     private IIntegerSetting       padGainSetting;
@@ -548,6 +550,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
         {
             case PushVersion.VERSION_1:
                 this.activatePush1PadSettings (globalSettings);
+                this.activatePush1PanSendButtonSetting (globalSettings);
                 this.activateConvertAftertouchSetting (globalSettings);
                 break;
 
@@ -789,6 +792,28 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     public boolean isPushModern ()
     {
         return this.pushVersion != PushVersion.VERSION_1;
+    }
+
+
+    /**
+     * Is the Push 1 Pan/Send button assigned to the FX-track volume bank?
+     *
+     * @return True if the button opens the FX-track volume bank
+     */
+    public boolean isPanSendButtonFxVolumeEnabled ()
+    {
+        return this.panSendButtonFxVolume;
+    }
+
+
+    /**
+     * Enable or disable the Push 1 Pan/Send button FX-volume shortcut.
+     *
+     * @param enabled True to assign Pan/Send to the FX-track volume bank
+     */
+    public void setPanSendButtonFxVolumeEnabled (final boolean enabled)
+    {
+        this.panSendButtonFxVolumeSetting.set (ON_OFF_OPTIONS[enabled ? 1 : 0]);
     }
 
 
@@ -1805,6 +1830,18 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
             this.padThresholdPush1 = lookupIndex (PushControlSurface.PUSH_PAD_THRESHOLDS_NAME, value);
             this.notifyObservers (PAD_PUSH1_THRESHOLD);
         });
+    }
+
+
+    /**
+     * Activate the Push 1 Pan/Send button setting.
+     *
+     * @param settingsUI The settings
+     */
+    private void activatePush1PanSendButtonSetting (final ISettingsUI settingsUI)
+    {
+        this.panSendButtonFxVolumeSetting = settingsUI.getEnumSetting ("Use Pan/Send button for FX Volume", CATEGORY_WORKFLOW, ON_OFF_OPTIONS, ON_OFF_OPTIONS[0]);
+        this.panSendButtonFxVolumeSetting.addValueObserver (value -> this.panSendButtonFxVolume = "On".equals (value));
     }
 
 
