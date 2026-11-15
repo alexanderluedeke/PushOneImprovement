@@ -51,6 +51,21 @@ public class VolumeCommand extends AbstractTriggerCommand<PushControlSurface, Pu
             return;
         }
 
+        // Optional Push 1 behaviour: keep Volume as a one-way mode button.
+        // Shift + Volume explicitly selects the original second-press view.
+        if (!config.isPushModern () && config.isVolumeButtonIgnoreDoublePressEnabled ())
+        {
+            if (this.surface.isShiftPressed ())
+            {
+                if (this.model.getHost ().supports (Capability.HAS_CROSSFADER))
+                    modeManager.setActive (Modes.CROSSFADER);
+            }
+            else
+                modeManager.setActive (Modes.VOLUME);
+
+            return;
+        }
+
         if (Modes.VOLUME.equals (currentMode))
         {
             if (this.model.getHost ().supports (Capability.HAS_CROSSFADER))

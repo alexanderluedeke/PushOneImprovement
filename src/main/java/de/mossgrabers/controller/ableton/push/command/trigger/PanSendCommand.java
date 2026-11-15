@@ -47,6 +47,23 @@ public class PanSendCommand extends AbstractTriggerCommand<PushControlSurface, P
         // Layer mode selection for Push 1
         Modes mode;
         final PushConfiguration config = this.surface.getConfiguration ();
+
+        // On Push 1, use Pan/Send as a shortcut to the FX-track volume bank.
+        // Shift + Pan/Send keeps the original Pan/Send behavior. Do not toggle
+        // away from the FX bank when the button is pressed repeatedly.
+        if (!config.isPushModern ()
+                && config.isPanSendButtonFxVolumeEnabled ()
+                && !this.surface.isShiftPressed ()
+                && !(this.surface.isSelectPressed ()
+                && Modes.isLayerMode (currentMode)))
+        {
+            if (!this.model.isEffectTrackBankActive ())
+                this.model.toggleCurrentTrackBank ();
+            modeManager.setActive (Modes.VOLUME);
+
+            return;
+        }
+
         if (!config.isPushModern () && this.surface.isSelectPressed () && Modes.isLayerMode (currentMode))
         {
             this.surface.setTriggerConsumed (ButtonID.SELECT);
