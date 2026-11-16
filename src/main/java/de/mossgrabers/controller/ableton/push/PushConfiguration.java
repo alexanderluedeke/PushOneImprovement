@@ -358,8 +358,8 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     private boolean               stopAutomationOnKnobRelease = false;
     private Modes                 debugMode                   = Modes.TRACK;
     private Modes                 layerMode                   = null;
-    private boolean               panSendButtonFxVolume       = false;
-    private boolean               volumeButtonIgnoreDoublePress = false;
+    private boolean               panSendButtonFxVolume       = true;
+    private boolean               volumeButtonIgnoreDoublePress = true;
 
     // Only Push 1
     private int                   velocityCurvePush1          = 1;
