@@ -51,6 +51,18 @@ public class VolumeCommand extends AbstractTriggerCommand<PushControlSurface, Pu
             return;
         }
 
+        // When Pan/Send has switched Push 1 to the FX-track volume bank,
+        // an unshifted Volume press switches back to the normal track bank.
+        if (!config.isPushModern ()
+                && config.isPanSendButtonFxVolumeEnabled ()
+                && !this.surface.isShiftPressed ()
+                && this.model.isEffectTrackBankActive ())
+        {
+            this.model.toggleCurrentTrackBank ();
+            modeManager.setActive (Modes.VOLUME);
+            return;
+        }
+
         // Optional Push 1 behaviour: keep Volume as a one-way mode button.
         // Shift + Volume explicitly selects the original second-press view.
         if (!config.isPushModern () && config.isVolumeButtonIgnoreDoublePressEnabled ())
