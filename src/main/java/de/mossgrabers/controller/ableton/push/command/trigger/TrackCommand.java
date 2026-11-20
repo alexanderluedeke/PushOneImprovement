@@ -82,7 +82,11 @@ public class TrackCommand extends AbstractTriggerCommand<PushControlSurface, Pus
                 }
 
                 if (Modes.TRACK.equals (currentMode))
-                    this.model.toggleCurrentTrackBank ();
+                {
+                    // Pan/Send already provides the FX-track volume shortcut.
+                    if (!config.isPanSendButtonFxVolumeEnabled ())
+                        this.model.toggleCurrentTrackBank ();
+                }
                 else
                     modeManager.setActive (Modes.TRACK);
             }
