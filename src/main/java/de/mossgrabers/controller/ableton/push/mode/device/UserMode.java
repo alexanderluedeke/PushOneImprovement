@@ -68,6 +68,32 @@ public class UserMode extends BaseMode<IParameter>
 
     /** {@inheritDoc} */
     @Override
+    public void onActivate ()
+    {
+        super.onActivate ();
+
+        // Both banks can become the default provider while this mode is active.
+        // Observe both so page changes are handled regardless of the selected mode.
+        this.projectParameterProvider.addParametersObserver (this);
+        this.trackParameterProvider.addParametersObserver (this);
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public void onDeactivate ()
+    {
+        // Remove both registrations. The superclass only knows the current default provider,
+        // which may have changed since activation.
+        this.projectParameterProvider.removeParametersObserver (this);
+        this.trackParameterProvider.removeParametersObserver (this);
+
+        super.onDeactivate ();
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
     public void onKnobTouch (final int index, final boolean isTouched)
     {
         this.setTouchedKnob (index, isTouched);
@@ -143,9 +169,48 @@ public class UserMode extends BaseMode<IParameter>
     private void setMode (final boolean isProjectMode)
     {
         this.isProjectMode = isProjectMode;
-        this.switchBanks (this.isProjectMode ? this.model.getProject ().getParameterBank () : this.model.getCursorTrack ().getParameterBank ());
+        final IParameterBank selectedBank = this.isProjectMode ? this.model.getProject ().getParameterBank () : this.model.getCursorTrack ().getParameterBank ();
+        this.switchBanks (selectedBank);
         this.setParameterProvider (this.isProjectMode ? this.projectParameterProvider : this.trackParameterProvider);
         this.bindControls ();
+
+        // Temporary diagnostics: compare the track remote-control values as soon as the mode
+        // changes and again after Bitwig has had time to deliver its initial parameter updates.
+        if (!this.isProjectMode)
+        {
+            this.logTrackParameterSnapshot ("immediately", selectedBank);
+            this.model.getHost ().scheduleTask (() -> this.logTrackParameterSnapshot ("after 250 ms", selectedBank), 250);
+        }
+    }
+
+
+    /**
+     * Log the first three track remote parameters to help diagnose stale values after a mode
+     * switch. Remove this method and its calls once the initialization issue is understood.
+     *
+     * @param timing When the snapshot was taken
+     * @param parameterBank The track parameter bank to inspect
+     */
+    private void logTrackParameterSnapshot (final String timing, final IParameterBank parameterBank)
+    {
+        final StringBuilder message = new StringBuilder ("[Push UserMode] Track remote parameters ").append (timing).append (" (cursor track: ").append (this.model.getCursorTrack ().getName ()).append ("): ");
+
+        final int count = Math.min (3, parameterBank.getPageSize ());
+        for (int i = 0; i < count; i++)
+        {
+            if (i > 0)
+                message.append (" | ");
+
+            final IParameter parameter = parameterBank.getItem (i);
+            message.append ('#').append (i + 1)
+                .append (" exists=").append (parameter.doesExist ())
+                .append (", name='").append (parameter.getName ())
+                .append ("', value=").append (parameter.getValue ())
+                .append (", displayed='").append (parameter.getDisplayedValue ())
+                .append ('\'');
+        }
+
+        this.model.getHost ().println (message.toString ());
     }
 
 
