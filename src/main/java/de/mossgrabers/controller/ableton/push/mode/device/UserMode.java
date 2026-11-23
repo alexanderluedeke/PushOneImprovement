@@ -149,6 +149,27 @@ public class UserMode extends BaseMode<IParameter>
     }
 
 
+    /**
+     * Select the Track Remote parameter bank.
+     */
+    public void selectTrackMode ()
+    {
+        if (this.isProjectMode)
+            this.setMode (false);
+    }
+
+
+    /**
+     * Check if the Track Remote parameter bank is selected.
+     *
+     * @return True if the Track Remote parameter bank is selected
+     */
+    public boolean isTrackMode ()
+    {
+        return !this.isProjectMode;
+    }
+
+
     /** {@inheritDoc} */
     @Override
     public void updateDisplay1 (final ITextDisplay display)

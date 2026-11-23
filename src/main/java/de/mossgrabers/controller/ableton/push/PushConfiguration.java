@@ -133,6 +133,8 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     public static final Integer     PREAMP_GAIN_2                   = Integer.valueOf (NEXT_SETTING_ID + 42);
     /** Audio Interface - Output configuration. */
     public static final Integer     AUDIO_OUTPUTS                   = Integer.valueOf (NEXT_SETTING_ID + 43);
+    /** Setting to open Track Remote parameters with the Scale button. */
+    public static final Integer     SCALE_BUTTON_TRACK_REMOTE       = Integer.valueOf (NEXT_SETTING_ID + 44);
 
     /** Use ribbon for pitch bend. */
     public static final int         RIBBON_MODE_PITCH               = 0;
@@ -356,6 +358,7 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     private int                   ribbonModeNoteRepeat        = NOTE_REPEAT_PERIOD;
 
     private boolean               stopAutomationOnKnobRelease = false;
+    private boolean               scaleButtonTrackRemoteEnabled = false;
     private Modes                 debugMode                   = Modes.TRACK;
     private Modes                 layerMode                   = null;
 
@@ -530,6 +533,8 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
         this.activateStopAutomationOnKnobReleaseSetting (globalSettings);
         this.activateNewClipLengthSetting (globalSettings);
         this.activateKnobSpeedSetting (globalSettings);
+        if (this.pushVersion == PushVersion.VERSION_1)
+            this.activateScaleButtonTrackRemoteSetting (globalSettings);
 
         // ----------------------------------------------------------------
         // Add Track - Device Favorites
@@ -640,6 +645,17 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
     public int getRibbonNoteRepeat ()
     {
         return this.ribbonModeNoteRepeat;
+    }
+
+
+    /**
+     * Get whether the Scale button opens Track Remote parameters on Push 1.
+     *
+     * @return True if enabled
+     */
+    public boolean isScaleButtonTrackRemoteEnabled ()
+    {
+        return this.pushVersion == PushVersion.VERSION_1 && this.scaleButtonTrackRemoteEnabled;
     }
 
 
@@ -1783,6 +1799,20 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
         settingsUI.getEnumSetting ("Stop automation recording on knob release", CATEGORY_WORKFLOW, ON_OFF_OPTIONS, ON_OFF_OPTIONS[0]).addValueObserver (value -> {
             this.stopAutomationOnKnobRelease = "On".equals (value);
             this.notifyObservers (STOP_AUTOMATION_ON_KNOB_RELEASE);
+        });
+    }
+
+
+    /**
+     * Activate the Scale button Track Remote setting.
+     *
+     * @param settingsUI The global settings
+     */
+    private void activateScaleButtonTrackRemoteSetting (final ISettingsUI settingsUI)
+    {
+        settingsUI.getBooleanSetting ("Scale button switches to Track Remote parameters", CATEGORY_WORKFLOW, false).addValueObserver (value -> {
+            this.scaleButtonTrackRemoteEnabled = value.booleanValue ();
+            this.notifyObservers (SCALE_BUTTON_TRACK_REMOTE);
         });
     }
 

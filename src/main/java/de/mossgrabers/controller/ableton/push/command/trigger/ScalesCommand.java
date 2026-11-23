@@ -6,6 +6,7 @@ package de.mossgrabers.controller.ableton.push.command.trigger;
 
 import de.mossgrabers.controller.ableton.push.PushConfiguration;
 import de.mossgrabers.controller.ableton.push.controller.PushControlSurface;
+import de.mossgrabers.controller.ableton.push.mode.device.UserMode;
 import de.mossgrabers.framework.command.core.AbstractTriggerCommand;
 import de.mossgrabers.framework.daw.IModel;
 import de.mossgrabers.framework.featuregroup.ModeManager;
@@ -40,6 +41,22 @@ public class ScalesCommand extends AbstractTriggerCommand<PushControlSurface, Pu
             return;
 
         final ModeManager modeManager = this.surface.getModeManager ();
+
+        if (this.surface.getConfiguration ().isScaleButtonTrackRemoteEnabled ())
+        {
+            if (this.surface.isShiftPressed ())
+            {
+                modeManager.setTemporary (Modes.SCALES);
+                return;
+            }
+
+            final UserMode userMode = (UserMode) modeManager.get (Modes.USER);
+            if (!modeManager.isActive (Modes.USER))
+                modeManager.setTemporary (Modes.USER);
+            userMode.selectTrackMode ();
+            return;
+        }
+
         if (modeManager.isActive (Modes.SCALES))
             modeManager.restore ();
         else
