@@ -46,7 +46,10 @@ public class ScalesCommand extends AbstractTriggerCommand<PushControlSurface, Pu
         {
             if (this.surface.isShiftPressed ())
             {
-                modeManager.setTemporary (Modes.SCALES);
+                if (modeManager.isActive (Modes.SCALES))
+                    modeManager.restore ();
+                else
+                    modeManager.setTemporary (Modes.SCALES);
                 return;
             }
 

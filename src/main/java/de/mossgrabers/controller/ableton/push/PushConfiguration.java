@@ -1810,8 +1810,8 @@ public class PushConfiguration extends AbstractConfiguration implements IGraphic
      */
     private void activateScaleButtonTrackRemoteSetting (final ISettingsUI settingsUI)
     {
-        settingsUI.getBooleanSetting ("Scale button switches to Track Remote parameters", CATEGORY_WORKFLOW, false).addValueObserver (value -> {
-            this.scaleButtonTrackRemoteEnabled = value.booleanValue ();
+        settingsUI.getEnumSetting ("Scale button switches to Track Remote parameters", CATEGORY_WORKFLOW, ON_OFF_OPTIONS, ON_OFF_OPTIONS[0]).addValueObserver (value -> {
+            this.scaleButtonTrackRemoteEnabled = "On".equals (value);
             this.notifyObservers (SCALE_BUTTON_TRACK_REMOTE);
         });
     }
