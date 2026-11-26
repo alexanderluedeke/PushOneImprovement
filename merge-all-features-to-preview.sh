@@ -52,7 +52,7 @@ for branch in $(git for-each-ref \
     printf "${BOLD_GREEN}Merging $branch ...${RESET}"
     if ! git merge --no-edit "$branch"; then
         echo
-        echo "ERROR: Could not merge '$branch'."
+        printf "${BOLD_RED}ERROR: Could not merge '$branch'.${RESET}"
         echo "Resetting '$PREVIEW_BRANCH' to '$BASE_BRANCH'..."
         git merge --abort 2>/dev/null || true
         git reset --hard "$BASE_BRANCH"
