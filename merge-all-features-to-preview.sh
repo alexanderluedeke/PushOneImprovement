@@ -52,7 +52,7 @@ for branch in $(git for-each-ref \
     printf "${BOLD_GREEN}Merging $branch ...${RESET}"
     if ! git merge --no-edit "$branch"; then
         echo
-        printf "${BOLD_RED}ERROR: Could not merge '$branch'.${RESET}"
+        printf "${BOLD_RED}ERROR: Could not merge '$branch'.${RESET}\n\n"
         echo "Resetting '$PREVIEW_BRANCH' to '$BASE_BRANCH'..."
         git merge --abort 2>/dev/null || true
         git reset --hard "$BASE_BRANCH"
@@ -62,6 +62,6 @@ for branch in $(git for-each-ref \
 done
 
 echo
-printf "${BOLD_GREEN}Done!${RESET} Build the Bitwig extension and test the features on '$PREVIEW_BRANCH'.\n\n"
+printf "${BOLD_GREEN}Done!${RESET} Build the Bitwig extension and test the features on '$PREVIEW_BRANCH'."
 printf "After successful testing, push the integration-preview with:"
 printf "  git push --force-with-lease -u origin $PREVIEW_BRANCH"
