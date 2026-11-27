@@ -62,6 +62,6 @@ for branch in $(git for-each-ref \
 done
 
 echo
-printf "${BOLD_GREEN}Done!${RESET} Build the Bitwig extension and test the features on '$PREVIEW_BRANCH'."
+printf "${BOLD_GREEN}Done!${RESET} Build the Bitwig extension and test the features on '$PREVIEW_BRANCH'.\n\n"
 printf "After successful testing, push the integration-preview with:"
 printf "  git push --force-with-lease -u origin $PREVIEW_BRANCH"
