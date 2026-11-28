@@ -4,12 +4,16 @@
 
 package de.mossgrabers.controller.ableton.push.mode.configuration;
 
+import de.mossgrabers.controller.ableton.push.PushConfiguration;
+import de.mossgrabers.controller.ableton.push.controller.PushColorManager;
 import de.mossgrabers.controller.ableton.push.controller.PushControlSurface;
 import de.mossgrabers.controller.ableton.push.mode.BaseMode;
+import de.mossgrabers.framework.controller.ButtonID;
 import de.mossgrabers.framework.controller.display.IGraphicDisplay;
 import de.mossgrabers.framework.controller.display.ITextDisplay;
 import de.mossgrabers.framework.daw.IModel;
 import de.mossgrabers.framework.daw.data.IItem;
+import de.mossgrabers.framework.utils.ButtonEvent;
 import de.mossgrabers.framework.utils.StringUtils;
 
 
@@ -53,6 +57,36 @@ public class ConfigurationMode extends BaseMode<IItem>
 
     /** {@inheritDoc} */
     @Override
+    public void onSecondRow (final int index, final ButtonEvent event)
+    {
+        if (index == 4 && event == ButtonEvent.UP)
+        {
+            final PushConfiguration configuration = this.surface.getConfiguration ();
+            configuration.setPanSendButtonFxVolumeEnabled (!configuration.isPanSendButtonFxVolumeEnabled ());
+        }
+        else if (index == 5 && event == ButtonEvent.UP)
+        {
+            final PushConfiguration configuration = this.surface.getConfiguration ();
+            configuration.setVolumeButtonIgnoreDoublePressEnabled (!configuration.isVolumeButtonIgnoreDoublePressEnabled ());
+        }
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
+    public int getButtonColor (final ButtonID buttonID)
+    {
+        if (this.isButtonRow (1, buttonID) == 4)
+            return this.surface.getConfiguration ().isPanSendButtonFxVolumeEnabled () ? PushColorManager.PUSH1_COLOR2_WHITE : PushColorManager.PUSH1_COLOR2_GREY_LO;
+
+        if (this.isButtonRow (1, buttonID) == 5)
+            return this.surface.getConfiguration ().isVolumeButtonIgnoreDoublePressEnabled () ? PushColorManager.PUSH1_COLOR2_WHITE : PushColorManager.PUSH1_COLOR2_GREY_LO;
+        return super.getButtonColor (buttonID);
+    }
+
+
+    /** {@inheritDoc} */
+    @Override
     public void updateDisplay1 (final ITextDisplay display)
     {
         display.setBlock (0, 0, "Pad Threshold").setBlock (1, 0, this.surface.getSelectedPadThreshold ());
@@ -60,6 +94,14 @@ public class ConfigurationMode extends BaseMode<IItem>
         display.setBlock (0, 3, "Firmware: " + this.surface.getMajorVersion () + "." + this.surface.getMinorVersion ());
         if (this.surface.getConfiguration ().getPadThresholdPush1 () < 20)
             display.setRow (3, StringUtils.pad ("Low threshold maycause stuck pads!", 68));
+
+        display.setBlock (0, 4, "Pan/Send");
+        display.setBlock (1, 4, "FX Volume");
+        display.setBlock (2, 4, this.surface.getConfiguration ().isPanSendButtonFxVolumeEnabled () ? "On" : "Off");
+
+        display.setBlock (0, 5, "Volume");
+        display.setBlock (1, 5, "Ignore 2nd");
+        display.setBlock (2, 5, this.surface.getConfiguration ().isVolumeButtonIgnoreDoublePressEnabled () ? "On" : "Off");
     }
 
 
