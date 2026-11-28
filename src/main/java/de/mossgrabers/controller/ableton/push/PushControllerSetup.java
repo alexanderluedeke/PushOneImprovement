@@ -4,7 +4,6 @@
 
 package de.mossgrabers.controller.ableton.push;
 
-import java.util.Optional;
 import java.util.function.IntSupplier;
 
 import de.mossgrabers.controller.ableton.push.PushConfiguration.LockState;
@@ -101,6 +100,7 @@ import de.mossgrabers.controller.ableton.push.view.SessionView;
 import de.mossgrabers.framework.command.aftertouch.AftertouchViewCommand;
 import de.mossgrabers.framework.command.continuous.KnobRowModeCommand;
 import de.mossgrabers.framework.command.core.NopCommand;
+import de.mossgrabers.framework.command.core.TriggerCommand;
 import de.mossgrabers.framework.command.trigger.BrowserCommand;
 import de.mossgrabers.framework.command.trigger.Direction;
 import de.mossgrabers.framework.command.trigger.FootswitchCommand;
@@ -129,6 +129,7 @@ import de.mossgrabers.framework.controller.ContinuousID;
 import de.mossgrabers.framework.controller.ISetupFactory;
 import de.mossgrabers.framework.controller.color.ColorManager;
 import de.mossgrabers.framework.controller.hardware.BindType;
+import de.mossgrabers.framework.controller.hardware.IHwButton;
 import de.mossgrabers.framework.controller.hardware.IHwFader;
 import de.mossgrabers.framework.controller.hardware.IHwRelativeKnob;
 import de.mossgrabers.framework.controller.valuechanger.TwosComplementValueChanger;
@@ -136,9 +137,6 @@ import de.mossgrabers.framework.daw.IHost;
 import de.mossgrabers.framework.daw.ITransport;
 import de.mossgrabers.framework.daw.ModelSetup;
 import de.mossgrabers.framework.daw.clip.INoteClip;
-import de.mossgrabers.framework.daw.data.ICursorDevice;
-import de.mossgrabers.framework.daw.data.ILayer;
-import de.mossgrabers.framework.daw.data.ITrack;
 import de.mossgrabers.framework.daw.data.bank.ITrackBank;
 import de.mossgrabers.framework.daw.midi.DeviceInquiry;
 import de.mossgrabers.framework.daw.midi.IMidiAccess;
@@ -165,6 +163,12 @@ import de.mossgrabers.framework.view.sequencer.ClipLengthView;
  */
 public class PushControllerSetup extends AbstractControllerSetup<PushControlSurface, PushConfiguration>
 {
+    private static final int        MUTE_SOLO_LED_OFF                 = 0;
+    private static final int        MUTE_SOLO_LED_STEADY               = 1;
+    private static final int        MUTE_SOLO_LED_SLOW_BLINK           = 2;
+
+    private static final int        PUSH_MODERN_SLOW_BLINK_CHANNEL     = 15;
+
     private static final String []  MIDI_FILTERS_CLASSIC =
     {
         // Note off - channel 1
@@ -638,8 +642,8 @@ public class PushControllerSetup extends AbstractControllerSetup<PushControlSurf
 
         }, ColorManager.BUTTON_STATE_OFF, ColorManager.BUTTON_STATE_ON);
 
-        this.addButton (ButtonID.MUTE, "Mute", new MuteCommand (this.model, surface), PushControlSurface.PUSH_BUTTON_MUTE, this::getMuteState, PushColorManager.PUSH_BUTTON_STATE_MUTE_ON, PushColorManager.PUSH_BUTTON_STATE_MUTE_HI);
-        this.addButton (ButtonID.SOLO, "Solo", new SoloCommand (this.model, surface), PushControlSurface.PUSH_BUTTON_SOLO, this::getSoloState, PushColorManager.PUSH_BUTTON_STATE_SOLO_ON, PushColorManager.PUSH_BUTTON_STATE_SOLO_HI);
+        this.addMuteSoloButton (surface, ButtonID.MUTE, "Mute", new MuteCommand (this.model, surface), PushControlSurface.PUSH_BUTTON_MUTE, this::getMuteLedState, PushColorManager.PUSH_BUTTON_STATE_MUTE_HI);
+        this.addMuteSoloButton (surface, ButtonID.SOLO, "Solo", new SoloCommand (this.model, surface), PushControlSurface.PUSH_BUTTON_SOLO, this::getSoloLedState, PushColorManager.PUSH_BUTTON_STATE_SOLO_HI);
         this.addButton (ButtonID.SCALES, "Scale", new ScalesCommand (this.model, surface), PushControlSurface.PUSH_BUTTON_SCALES, () -> {
             if (modeManager.isActive (Modes.SCALES))
                 return true;
@@ -1124,36 +1128,64 @@ public class PushControllerSetup extends AbstractControllerSetup<PushControlSurf
     }
 
 
-    private boolean getMuteState ()
+    /**
+     * Register a Mute or Solo button with project-wide status feedback.
+     *
+     * @param surface The Push control surface
+     * @param buttonID The button ID
+     * @param label The button label
+     * @param command The button command
+     * @param midiControl The button's MIDI CC
+     * @param ledStateSupplier Supplies OFF, STEADY or SLOW_BLINK
+     * @param activeColorKey The color to use while the mode is active or blinking
+     */
+    private void addMuteSoloButton (final PushControlSurface surface, final ButtonID buttonID, final String label, final TriggerCommand command, final int midiControl, final IntSupplier ledStateSupplier, final String activeColorKey)
     {
-        if (this.configuration.getLockState () == LockState.MUTE)
-            return !this.configuration.isPushModern ();
+        final IHwButton button = surface.createButton (buttonID, label);
+        button.bind (command);
+        button.bind (surface.getMidiInput (), BindType.CC, 0, midiControl);
 
-        final ModeManager modeManager = this.getSurface ().getModeManager ();
-        if (modeManager.isActive (Modes.DEVICE_LAYER))
-        {
-            final ICursorDevice cd = this.model.getCursorDevice ();
-            final Optional<ILayer> layer = cd.getLayerBank ().getSelectedItem ();
-            return layer.isPresent () && layer.get ().isMute ();
-        }
-        final ITrack selTrack = modeManager.isActive (Modes.MASTER) ? this.model.getMasterTrack () : this.model.getCursorTrack ();
-        return selTrack.isMute ();
+        final int activeColor = this.colorManager.getColorIndex (activeColorKey);
+        surface.createLight (null, ledStateSupplier, state -> {
+            if (this.pushVersion == PushVersion.VERSION_1)
+            {
+                // Push 1 encodes slow blinking in the CC value itself.
+                final int value = state == MUTE_SOLO_LED_STEADY ? activeColor : state == MUTE_SOLO_LED_SLOW_BLINK ? activeColor + 1 : 0;
+                surface.setTrigger (BindType.CC, 0, midiControl, value);
+                return;
+            }
+
+            // Push 2 uses MIDI channels 1-15 for LED animations. Push 3 uses
+            // the same modern Push MIDI message format in this extension.
+            if (state == MUTE_SOLO_LED_SLOW_BLINK)
+            {
+                // Start from black, then animate to the selected button color.
+                surface.setTrigger (BindType.CC, 0, midiControl, 0);
+                surface.setTrigger (BindType.CC, PUSH_MODERN_SLOW_BLINK_CHANNEL, midiControl, activeColor);
+            }
+            else
+                // A channel-0 update also stops any running animation.
+                surface.setTrigger (BindType.CC, 0, midiControl, state == MUTE_SOLO_LED_STEADY ? activeColor : 0);
+        }, state -> this.colorManager.getColor (state == MUTE_SOLO_LED_OFF ? -1 : activeColor, buttonID), button);
     }
 
 
-    private boolean getSoloState ()
+    private int getMuteLedState ()
     {
-        if (this.configuration.getLockState () == LockState.SOLO)
-            return !this.configuration.isPushModern ();
+        // The active mode always takes precedence over the project's mute state.
+        if (this.configuration.getLockState () == LockState.MUTE)
+            return MUTE_SOLO_LED_STEADY;
 
-        final ModeManager modeManager = this.getSurface ().getModeManager ();
-        if (modeManager.isActive (Modes.DEVICE_LAYER))
-        {
-            final ICursorDevice cd = this.model.getCursorDevice ();
-            final Optional<ILayer> layer = cd.getLayerBank ().getSelectedItem ();
-            return layer.isPresent () && layer.get ().isSolo ();
-        }
-        final ITrack selTrack = modeManager.isActive (Modes.MASTER) ? this.model.getMasterTrack () : this.model.getCursorTrack ();
-        return selTrack.isSolo ();
+        return this.model.getProject ().hasMute () ? MUTE_SOLO_LED_SLOW_BLINK : MUTE_SOLO_LED_OFF;
+    }
+
+
+    private int getSoloLedState ()
+    {
+        // The active mode always takes precedence over the project's solo state.
+        if (this.configuration.getLockState () == LockState.SOLO)
+            return MUTE_SOLO_LED_STEADY;
+
+        return this.model.getProject ().hasSolo () ? MUTE_SOLO_LED_SLOW_BLINK : MUTE_SOLO_LED_OFF;
     }
 }
