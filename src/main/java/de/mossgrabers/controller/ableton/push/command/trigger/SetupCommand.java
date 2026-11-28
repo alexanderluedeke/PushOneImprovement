@@ -7,6 +7,7 @@ package de.mossgrabers.controller.ableton.push.command.trigger;
 import de.mossgrabers.controller.ableton.push.PushConfiguration;
 import de.mossgrabers.controller.ableton.push.PushVersion;
 import de.mossgrabers.controller.ableton.push.controller.PushControlSurface;
+import de.mossgrabers.controller.ableton.push.mode.device.UserMode;
 import de.mossgrabers.framework.command.core.AbstractTriggerCommand;
 import de.mossgrabers.framework.daw.IModel;
 import de.mossgrabers.framework.featuregroup.ModeManager;
@@ -48,6 +49,16 @@ public class SetupCommand extends AbstractTriggerCommand<PushControlSurface, Pus
         final ModeManager modeManager = this.surface.getModeManager ();
 
         final Modes mode = this.getMode ();
+
+        // With the Scale button remapped, the User button always selects Project Remote.
+        // It must not toggle out of User mode and restore the previously active mixer mode.
+        if (this.pushVersion == PushVersion.VERSION_1 && mode == Modes.USER && this.surface.getConfiguration ().isScaleButtonTrackRemoteEnabled ())
+        {
+            if (!modeManager.isActive (Modes.USER))
+                modeManager.setTemporary (Modes.USER);
+            ((UserMode) modeManager.get (Modes.USER)).selectProjectMode ();
+            return;
+        }
 
         if (modeManager.isActive (mode))
             modeManager.restore ();
